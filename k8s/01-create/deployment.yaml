@@ -1,0 +1,65 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Task 1 – Create an Nginx Deployment (image version: nginx:1.24)
+# Apply:  kubectl apply -f k8s/01-create/deployment.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: webapp
+  labels:
+    app: nginx
+    version: "1.24"
+  annotations:
+    kubernetes.io/change-cause: "Initial deployment – nginx:1.24"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+
+  # RollingUpdate is the default; we declare it explicitly for clarity.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1          # one extra pod during the rollout
+      maxUnavailable: 0    # never allow zero available pods
+
+  template:
+    metadata:
+      labels:
+        app: nginx
+        version: "1.24"
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.24
+          ports:
+            - name: http
+              containerPort: 80
+
+          # Sensible resource guardrails
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+
+          # Liveness – restart if nginx stops responding
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+
+          # Readiness – route traffic only when nginx is ready
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5

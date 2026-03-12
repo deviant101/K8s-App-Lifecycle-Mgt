@@ -1,0 +1,68 @@
+# =============================================================================
+# Task 3b – Recreate Strategy
+#
+# How it works:
+#   ALL running pods are terminated first.  Only after they are gone does
+#   Kubernetes create new pods.  This causes a brief downtime – use this
+#   strategy when the old and new versions of your app cannot run side-by-side
+#   (e.g. incompatible DB schema changes).
+#
+# Apply (re-use the same Deployment name so K8s updates it in place):
+#   kubectl apply -f k8s/03-update/recreate.yaml
+#
+# Watch the behaviour:
+#   kubectl get pods -n webapp -w
+#   # You will see all old pods Terminating at once before new ones start.
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: webapp
+  labels:
+    app: nginx
+    version: "1.25"
+  annotations:
+    kubernetes.io/change-cause: "Strategy change to Recreate – nginx:1.25"
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: nginx
+
+  # ── Recreate strategy ──────────────────────────────────────────────────────
+  strategy:
+    type: Recreate     # no rollingUpdate block is valid here
+
+  template:
+    metadata:
+      labels:
+        app: nginx
+        version: "1.25"
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5

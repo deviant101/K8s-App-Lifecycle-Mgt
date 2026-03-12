@@ -1,0 +1,76 @@
+# =============================================================================
+# Task 5 – Deployment that mounts the ConfigMap as Nginx's welcome page
+# Apply:  kubectl apply -f k8s/05-configmap/
+# Access: kubectl port-forward svc/nginx-configmap-svc 8081:80 -n webapp
+#         → open http://localhost:8081
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-configmap-demo
+  namespace: webapp
+  labels:
+    app: nginx-configmap
+    demo: configmap
+  annotations:
+    kubernetes.io/change-cause: "Custom welcome page served from ConfigMap"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-configmap
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: nginx-configmap
+        demo: configmap
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.24
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+
+          # ── Mount the ConfigMap key as a file ───────────────────────────────
+          volumeMounts:
+            - name: html-volume
+              mountPath: /usr/share/nginx/html   # replaces the entire html dir
+              readOnly: true
+
+      volumes:
+        - name: html-volume
+          configMap:
+            name: nginx-html-config   # must match ConfigMap metadata.name
+            items:
+              - key: index.html
+                path: index.html      # filename inside mountPath
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-configmap-svc
+  namespace: webapp
+  labels:
+    app: nginx-configmap
+    demo: configmap
+spec:
+  type: ClusterIP
+  selector:
+    app: nginx-configmap
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

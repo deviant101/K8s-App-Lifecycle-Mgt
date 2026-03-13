@@ -1,8 +1,7 @@
 # =============================================================================
 # Task 6 – Deployment that mounts the Secret as Nginx's welcome page
 # Apply:  kubectl apply -f k8s/06-secret/
-# Access: kubectl port-forward svc/nginx-secret-svc 8082:80 -n webapp
-#         → open http://localhost:8082
+# Access: http://<NODE_IP>:30082
 # =============================================================================
 apiVersion: apps/v1
 kind: Deployment
@@ -68,10 +67,11 @@ metadata:
     app: nginx-secret
     demo: secret
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: nginx-secret
   ports:
     - protocol: TCP
       port: 80
       targetPort: 80
+      nodePort: 30082

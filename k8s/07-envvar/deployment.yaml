@@ -20,8 +20,8 @@
 # Apply:
 #   kubectl apply -f k8s/07-envvar/deployment.yaml
 # Access:
-#   kubectl port-forward svc/flask-envvar-svc 8083:80 -n webapp
-#   → open http://localhost:8083
+#   Nginx envvar demo: http://<NODE_IP>:30083
+#   Flask envvar demo: http://<NODE_IP>:30084
 # =============================================================================
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -160,13 +160,14 @@ metadata:
     app: nginx-envvar
     demo: envvar
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: nginx-envvar
   ports:
     - protocol: TCP
       port: 80
       targetPort: 80
+      nodePort: 30083
 
 ---
 # =============================================================================
@@ -250,10 +251,11 @@ metadata:
     app: flask-envvar
     demo: envvar
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: flask-envvar
   ports:
     - protocol: TCP
       port: 80
       targetPort: 5000    # Flask runs on 5000; service exposes 80
+      nodePort: 30084

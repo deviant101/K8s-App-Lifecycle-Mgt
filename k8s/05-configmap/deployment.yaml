@@ -1,8 +1,7 @@
 # =============================================================================
 # Task 5 – Deployment that mounts the ConfigMap as Nginx's welcome page
 # Apply:  kubectl apply -f k8s/05-configmap/
-# Access: kubectl port-forward svc/nginx-configmap-svc 8081:80 -n webapp
-#         → open http://localhost:8081
+# Access: http://<NODE_IP>:30081
 # =============================================================================
 apiVersion: apps/v1
 kind: Deployment
@@ -67,10 +66,11 @@ metadata:
     app: nginx-configmap
     demo: configmap
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: nginx-configmap
   ports:
     - protocol: TCP
       port: 80
       targetPort: 80
+      nodePort: 30081

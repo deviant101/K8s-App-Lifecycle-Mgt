@@ -52,11 +52,9 @@ kubectl cluster-info
 kubectl get nodes
 
 # 3. Copy this repository onto the master
-git clone <your-repo-url> ~/3-K8s-App-Lifecycle-Mgt
-# or use scp from your local machine:
-#   scp -r /path/to/3-K8s-App-Lifecycle-Mgt <user>@<azure-vm-ip>:~/
+git clone https://github.com/deviant101/K8s-App-Lifecycle-Mgt.git
 
-cd ~/3-K8s-App-Lifecycle-Mgt
+cd K8s-App-Lifecycle-Mgt
 ```
 
 ---
@@ -67,7 +65,7 @@ cd ~/3-K8s-App-Lifecycle-Mgt
 
 ```bash
 # From the repo directory on the master node:
-cd ~/3-K8s-App-Lifecycle-Mgt
+cd K8s-App-Lifecycle-Mgt
 
 # 1. Create the namespace
 kubectl apply -f k8s/namespace.yaml

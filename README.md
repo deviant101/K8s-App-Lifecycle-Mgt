@@ -269,7 +269,7 @@ curl http://<POD_IP>:80
 
 Two approaches are provided in `k8s/07-envvar/deployment.yaml`:
 
-### Approach A – initContainer + emptyDir  *(no custom image)*
+### Approach – initContainer + emptyDir  *(no custom image)*
 
 An `initContainer` (busybox) reads `env:` variables and writes `index.html` to
 a shared `emptyDir` volume before Nginx starts.
@@ -289,35 +289,6 @@ kubectl set env deployment/nginx-envvar-demo -n webapp \
   WELCOME_MESSAGE="Updated message from Environment Variables!" \
   APP_VERSION="2.0"
 # The pod restarts and the initContainer regenerates index.html.
-```
-
-### Approach B – Flask app  *(requires building the custom image)*
-
-The Flask app reads env vars **at request time** – no restart needed when
-values change, provided the pod is recycled.
-
-```bash
-# Build the Flask image directly on the master node
-cd ~/3-K8s-App-Lifecycle-Mgt/flask-app
-docker build -t flask-nginx-app:1.0 .
-cd ..
-
-# NOTE: imagePullPolicy is already set to IfNotPresent in the manifest,
-# so K8s uses the locally built image without pulling from a registry.
-
-# Deploy
-kubectl apply -f k8s/07-envvar/deployment.yaml
-
-# Test using the pod IP
-kubectl get pod -n webapp -l app=flask-envvar -o wide
-curl http://<POD_IP>:5000
-
-# Update env vars (triggers a rolling restart)
-kubectl set env deployment/flask-envvar-demo -n webapp \
-  PAGE_TITLE="K8s Flask App v2" \
-  APP_VERSION="2.0" \
-  BG_COLOR="#f0fdf4" \
-  ACCENT_COLOR="#10b981"
 ```
 
 ---

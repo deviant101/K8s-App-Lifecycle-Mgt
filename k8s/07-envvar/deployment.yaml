@@ -7,26 +7,12 @@
 #     Uses an initContainer (busybox) that reads env vars and writes
 #     index.html to a shared emptyDir volume before Nginx starts.
 #
-#   Approach B (Flask app – requires building the image):
-#     The Flask container reads env vars at request time and renders
-#     a Jinja2 template dynamically.  More realistic for a real service.
-#
-# For Approach B, build the image first:
-#   cd flask-app
-#   docker build -t flask-nginx-app:1.0 .
-#   docker build -t flask-nginx-app:2.0 --build-arg APP_VERSION=2.0 .
-#   # If using minikube:  eval $(minikube docker-env) before building
-#
 # Apply:
 #   kubectl apply -f k8s/07-envvar/deployment.yaml
 # Access:
 #   Nginx envvar demo: http://<NODE_IP>:30083
-#   Flask envvar demo: http://<NODE_IP>:30084
 # =============================================================================
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Approach A – initContainer + emptyDir (no custom image required)
-# ─────────────────────────────────────────────────────────────────────────────
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -155,7 +141,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nginx-envvar-svc
-  namespace: webapp
   labels:
     app: nginx-envvar
     demo: envvar
@@ -168,94 +153,3 @@ spec:
       port: 80
       targetPort: 80
       nodePort: 30083
-
----
-# =============================================================================
-# Approach B – Flask app reads env vars at request time  (requires custom image)
-#
-# Build first:
-#   cd flask-app && docker build -t flask-nginx-app:1.0 .
-# =============================================================================
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: flask-envvar-demo
-  namespace: webapp
-  labels:
-    app: flask-envvar
-    demo: envvar
-  annotations:
-    kubernetes.io/change-cause: "Flask app uses env vars to render welcome page (v1.0)"
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: flask-envvar
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-  template:
-    metadata:
-      labels:
-        app: flask-envvar
-        demo: envvar
-    spec:
-      containers:
-        - name: flask-app
-          image: flask-nginx-app:1.0   # built from flask-app/Dockerfile
-          imagePullPolicy: IfNotPresent
-          ports:
-            - name: http
-              containerPort: 5000
-          # ── Environment Variables ──────────────────────────────────────────
-          env:
-            - name: PAGE_TITLE
-              value: "K8s Flask App"
-            - name: WELCOME_MESSAGE
-              value: "Hello from Kubernetes! Content driven by Environment Variables."
-            - name: APP_VERSION
-              value: "1.0"
-            - name: BG_COLOR
-              value: "#eef2ff"
-            - name: ACCENT_COLOR
-              value: "#4f46e5"
-          resources:
-            requests:
-              memory: "64Mi"
-              cpu: "100m"
-            limits:
-              memory: "128Mi"
-              cpu: "250m"
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 5000
-            initialDelaySeconds: 10
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 5000
-            initialDelaySeconds: 5
-            periodSeconds: 5
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: flask-envvar-svc
-  namespace: webapp
-  labels:
-    app: flask-envvar
-    demo: envvar
-spec:
-  type: NodePort
-  selector:
-    app: flask-envvar
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 5000    # Flask runs on 5000; service exposes 80
-      nodePort: 30084

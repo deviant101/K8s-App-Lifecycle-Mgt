@@ -53,7 +53,7 @@ spec:
         - name: html-volume
           secret:
             secretName: nginx-html-secret   # must match Secret metadata.name
-            defaultMode: 0400              # owner read-only permissions
+            defaultMode: 0444              # readable by nginx worker user
             items:
               - key: index.html
                 path: index.html
@@ -62,7 +62,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nginx-secret-svc
-  namespace: webapp
   labels:
     app: nginx-secret
     demo: secret

@@ -61,7 +61,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nginx-configmap-svc
-  namespace: webapp
   labels:
     app: nginx-configmap
     demo: configmap
